@@ -19,6 +19,7 @@ package com.github.ksoichiro.android.observablescrollview.samples;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
 import android.util.Log;
+import android.view.View;
 import android.widget.AbsListView;
 
 import com.github.ksoichiro.android.observablescrollview.ObservableListView;
@@ -28,6 +29,11 @@ import com.github.ksoichiro.android.observablescrollview.ScrollState;
 public class ActionBarControlListViewActivity extends BaseActivity implements ObservableScrollViewCallbacks {
 
     private static final String TAG = ActionBarControlListViewActivity.class.getSimpleName();
+    private ScrollState scrollState = ScrollState.STOP;
+    private int scrollY = 0;
+    private int stateChangedY = 0;
+    private boolean isActionBarVisible = true;
+    private boolean isActionBarLock = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,13 +53,50 @@ public class ActionBarControlListViewActivity extends BaseActivity implements Ob
 
             @Override
             public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
-                Log.v(TAG, "onScroll: firstVisibleItem: " + firstVisibleItem + " visibleItemCount: " + visibleItemCount + " totalItemCount: " + totalItemCount);
+//                Log.v(TAG, "onScroll: firstVisibleItem: " + firstVisibleItem + " visibleItemCount: " + visibleItemCount + " totalItemCount: " + totalItemCount);
             }
         });
     }
 
     @Override
     public void onScrollChanged(int scrollY, boolean firstScroll, boolean dragging) {
+        ScrollState scrollState;
+        if (scrollY > this.scrollY + 5) {
+            scrollState = ScrollState.UP;
+        } else if (scrollY < this.scrollY - 5) {
+            scrollState = ScrollState.DOWN;
+        } else {
+            scrollState = this.scrollState;
+        }
+
+        if (!scrollState.equals(this.scrollState)) {
+            stateChangedY = scrollY;
+            Log.v(TAG, "onScrollStateChanged: " + scrollState);
+            this.scrollState = scrollState;
+        }
+        int scrollDistance = scrollY - stateChangedY;
+        Log.v(TAG, "first:" + firstScroll + ",  Y:" + scrollY + ",  drag:" + dragging + ",  distance:" + scrollDistance);
+
+        if (!isActionBarLock &&  Math.abs(scrollDistance) > 100) {
+            isActionBarLock = true;
+            ActionBar ab = getSupportActionBar();
+            if (ab == null) {
+                return;
+            }
+            if (scrollState == ScrollState.UP & isActionBarVisible) {
+                if (ab.isShowing()) {
+                    isActionBarVisible = false;
+                    ab.hide();
+                }
+            } else if (scrollState == ScrollState.DOWN & !isActionBarVisible) {
+                if (!ab.isShowing()) {
+                    isActionBarVisible = true;
+                    ab.show();
+                }
+            }
+            isActionBarLock = false;
+        }
+        this.scrollY = scrollY;
     }
 
     @Override
@@ -62,18 +105,18 @@ public class ActionBarControlListViewActivity extends BaseActivity implements Ob
 
     @Override
     public void onUpOrCancelMotionEvent(ScrollState scrollState) {
-        ActionBar ab = getSupportActionBar();
-        if (ab == null) {
-            return;
-        }
-        if (scrollState == ScrollState.UP) {
-            if (ab.isShowing()) {
-                ab.hide();
-            }
-        } else if (scrollState == ScrollState.DOWN) {
-            if (!ab.isShowing()) {
-                ab.show();
-            }
-        }
+//        ActionBar ab = getSupportActionBar();
+//        if (ab == null) {
+//            return;
+//        }
+//        if (scrollState == ScrollState.UP) {
+//            if (ab.isShowing()) {
+//                ab.hide();
+//            }
+//        } else if (scrollState == ScrollState.DOWN) {
+//            if (!ab.isShowing()) {
+//                ab.show();
+//            }
+//        }
     }
 }
